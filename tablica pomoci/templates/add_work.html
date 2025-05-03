@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Добавить работу{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <h2 class="mb-4">Добавить новую работу</h2>
+
+        <form method="POST">
+            {{ form.hidden_tag() }}
+
+            <div class="mb-3">
+                {{ form.description.label(class="form-label") }}
+                {{ form.description(class="form-control", rows=5) }}
+                {% if form.description.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.description.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.categories.label(class="form-label") }}
+                {{ form.categories(class="form-select", size=5) }}
+                {% if form.categories.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.categories.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <small class="text-muted">Удерживайте Ctrl для выбора нескольких категорий</small>
+            </div>
+
+            <div class="mt-4">
+                {{ form.submit(class="btn btn-primary") }}
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    // Опционально: улучшение UX для множественного выбора
+    document.addEventListener('DOMContentLoaded', function() {
+        const select = document.querySelector('select[name="categories"]');
+        if (select) {
+            select.addEventListener('focus', () => {
+                select.size = 5;
+            });
+            select.addEventListener('blur', () => {
+                select.size = 1;
+            });
+            select.addEventListener('change', () => {
+                const options = Array.from(select.selectedOptions);
+                if (options.length > 0) {
+                    select.title = `Выбрано: ${options.map(opt => opt.text).join(', ')}`;
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
