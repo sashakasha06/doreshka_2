@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User: {{ person.name }}</title>
+    <meta charset="utf-8">
+    <style>
+        #map { width: 100%; height: 400px; margin: 20px 0; border: 1px solid #ccc; }
+        .user-info { margin: 20px; padding: 20px; border: 1px solid #ddd; }
+        .debug-info {
+            margin: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .debug-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .map-container { position: relative; }
+        .map-title {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.8);
+            padding: 5px 10px;
+            z-index: 1000;
+            font-weight: bold;
+        }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <div class="user-info">
+        <h1>{{ person.name }}</h1>
+        <p>Age: {{ person.age }}</p>
+        <p>Work: {{ person.work }}</p>
+        <p>City: <span id="city-name">{{ person.city }}</span></p>
+    </div>
+
+    <h2>Map of {{ person.city }}</h2>
+    <div class="map-container">
+        <div class="map-title">{{ person.city }} ({{ person.name }})</div>
+        <img id="map-image" src="" alt="Map of {{ person.city }}">
+    </div>
+
+    <div class="debug-info">
+        <div class="debug-title">Debug Information:</div>
+        <div id="debug-output">Loading...</div>
+    </div>
+
+    <script>
+        const GEOCODER_API_KEY = "{{ geocoder_key }}";
+        const MAPS_API_KEY = "{{ maps_key }}";
+        const cityName = document.getElementById('city-name').textContent.trim();
+        const debugOutput = document.getElementById('debug-output');
+
+        function logDebugInfo(message) {
+            debugOutput.innerHTML += message + '\n\n';
+        }
+
+        // Функция для получения координат города
+        async function getCityCoordinates(city) {
+            const geocoderUrl = `https://geocode-maps.yandex.ru/1.x/?apikey=${GEOCODER_API_KEY}&geocode=${encodeURIComponent(city)}&format=json`;
+
+
+            try {
+                const response = await fetch(geocoderUrl);
+                const data = await response.json();
+
+                if (!data.response || !data.response.GeoObjectCollection ||
+                    !data.response.GeoObjectCollection.featureMember ||
+                    data.response.GeoObjectCollection.featureMember.length === 0) {
+                    throw new Error('No geocoding results found');
+                }
+
+                const feature = data.response.GeoObjectCollection.featureMember[0].GeoObject;
+                const envelope = feature.boundedBy.Envelope;
+                const lowerCorner = envelope.lowerCorner.split(" ");
+                const upperCorner = envelope.upperCorner.split(" ");
+
+                // Вычисляем центр
+                const center = [
+                    (parseFloat(lowerCorner[0]) + parseFloat(upperCorner[0])) / 2,
+                    (parseFloat(lowerCorner[1]) + parseFloat(upperCorner[1])) / 2
+                ];
+
+                // Вычисляем размер области
+                const span = [
+                    Math.abs(parseFloat(upperCorner[0]) - parseFloat(lowerCorner[0])),
+                    Math.abs(parseFloat(upperCorner[1]) - parseFloat(lowerCorner[1]))
+                ];
+
+                const result = {
+                    center: center.join(','),
+                    span: span.join(',')
+                };
+
+                return result;
+            } catch (error) {
+                logDebugInfo(`Geocoder Error: ${error.message}`);
+                return null;
+            }
+        }
+
+        // Функция для загрузки карты
+        async function loadMap() {
+            const coords = await getCityCoordinates(cityName);
+
+            if (!coords) {
+                logDebugInfo('Failed to get coordinates, cannot load map');
+                return;
+            }
+
+            const mapUrl = `https://static-maps.yandex.ru/v1?ll=${coords.center}&spn=${coords.span}&apikey=${MAPS_API_KEY}`;
+
+
+            document.getElementById('map-image').src = mapUrl;
+            document.getElementById('map-image').onload = () => {
+                logDebugInfo('Map image loaded successfully');
+            };
+            document.getElementById('map-image').onerror = () => {
+                logDebugInfo('Error loading map image');
+            };
+        }
+
+        // Загружаем карту при открытии страницы
+        window.onload = loadMap;
+    </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>People Database</title>
+    <style>
+        table { border-collapse: collapse; width: 80%; margin: 20px auto; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">People Records</h1>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Age</th>
+            <th>Work</th>
+            <th>City</th>
+        </tr>
+        {% for person in people %}
+        <tr>
+            <td><a href="/users_show/{{ person.id }}">{{ person.id }}</a></td>
+            <td>{{ person.name }}</td>
+            <td>{{ person.age }}</td>
+            <td>{{ person.work }}</td>
+            <td>{{ person.city }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
